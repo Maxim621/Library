@@ -1,187 +1,312 @@
-﻿using System;
-using System.Collections.Generic;
-using Library.DAL.Models;
+﻿using Library.DAL.Models;
 using Microsoft.EntityFrameworkCore;
+using System.Reflection.PortableExecutable;
 
-namespace Library.DAL;
-
-public partial class LibraryContext : DbContext
+namespace Library.DAL
 {
-    public LibraryContext()
+
+    public class LibraryContext : DbContext
     {
-    }
+        public DbSet<Librarian> Librarians { get; set; }
+        public DbSet<Reader> Readers { get; set; }
+        public DbSet<Author> Authors { get; set; }
+        public DbSet<Book> Books { get; set; }
+        public DbSet<Document> Documents { get; set; }
+        public DbSet<PublishingCode> PublishingCodes { get; set; }
+        public DbSet<BookLoan> BookLoans { get; set; }
+        public DbSet<BookAuthor> BookAuthors { get; set; }
 
-    public LibraryContext(DbContextOptions<LibraryContext> options)
-        : base(options)
-    {
-    }
-
-    public virtual DbSet<Author> Authors { get; set; }
-
-    public virtual DbSet<Book> Books { get; set; }
-
-    public virtual DbSet<Document> Documents { get; set; }
-
-    public virtual DbSet<Librarian> Librarians { get; set; }
-
-    public virtual DbSet<PublishingCode> PublishingCodes { get; set; }
-
-    public virtual DbSet<Reader> Readers { get; set; }
-
-    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-#warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see http://go.microsoft.com/fwlink/?LinkId=723263.
-        => optionsBuilder.UseSqlServer("Server=DESKTOP-M5BKIQ7\\MSSQLSERVER01;Database=Library;Integrated Security=True;TrustServerCertificate=true");
-
-    protected override void OnModelCreating(ModelBuilder modelBuilder)
-    {
-        modelBuilder.Entity<Author>(entity =>
+        public LibraryContext(DbContextOptions<LibraryContext> options) : base(options)
         {
-            entity.HasKey(e => e.Id).HasName("PK__Author__3214EC27372F52AD");
+        }
 
-            entity.ToTable("Author");
-
-            entity.Property(e => e.Id)
-                .ValueGeneratedNever()
-                .HasColumnName("ID");
-            entity.Property(e => e.DateOfBirth).HasColumnType("date");
-            entity.Property(e => e.Forename).HasMaxLength(255);
-            entity.Property(e => e.SecondName).HasMaxLength(255);
-            entity.Property(e => e.Surname).HasMaxLength(255);
-
-            entity.HasMany(d => d.Books).WithMany(p => p.Authors)
-                .UsingEntity<Dictionary<string, object>>(
-                    "AuthorsBook",
-                    r => r.HasOne<Book>().WithMany()
-                        .HasForeignKey("BookId")
-                        .OnDelete(DeleteBehavior.ClientSetNull)
-                        .HasConstraintName("FK__AuthorsBo__Book___45F365D3"),
-                    l => l.HasOne<Author>().WithMany()
-                        .HasForeignKey("AuthorId")
-                        .OnDelete(DeleteBehavior.ClientSetNull)
-                        .HasConstraintName("FK__AuthorsBo__Autho__44FF419A"),
-                    j =>
-                    {
-                        j.HasKey("AuthorId", "BookId").HasName("PK__AuthorsB__099BC9E6BB727AB9");
-                        j.ToTable("AuthorsBooks");
-                        j.IndexerProperty<int>("AuthorId").HasColumnName("Author_ID");
-                        j.IndexerProperty<int>("BookId").HasColumnName("Book_ID");
-                    });
-        });
-
-        modelBuilder.Entity<Book>(entity =>
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            entity.HasKey(e => e.Id).HasName("PK__Book__3214EC273D98925B");
+            base.OnModelCreating(modelBuilder);
 
-            entity.ToTable("Book");
+            // Визначення взаємозв'язку між книгою та автором (багато-до-багатьох)
+            modelBuilder.Entity<BookAuthor>()
+    .HasKey(ba => new { ba.BookID, ba.AuthorID });
 
-            entity.Property(e => e.Id)
-                .ValueGeneratedNever()
-                .HasColumnName("ID");
-            entity.Property(e => e.CityOfPublishing)
-                .HasMaxLength(255)
-                .HasColumnName("City_of_publishing");
-            entity.Property(e => e.PublisherCode).HasMaxLength(255);
-            entity.Property(e => e.PublishingCodeId).HasColumnName("PublishingCode_ID");
-            entity.Property(e => e.PublishingCountry)
-                .HasMaxLength(255)
-                .HasColumnName("Publishing_country");
-            entity.Property(e => e.Title).HasMaxLength(255);
+            modelBuilder.Entity<BookAuthor>()
+                .HasOne(ba => ba.Book)
+                .WithMany(b => b.BookAuthors)
+                .HasForeignKey(ba => ba.BookID);
 
-            entity.HasOne(d => d.PublishingCode).WithMany(p => p.Books)
-                .HasForeignKey(d => d.PublishingCodeId)
-                .HasConstraintName("FK__Book__Publishing__3D5E1FD2");
-        });
+            modelBuilder.Entity<BookAuthor>()
+                .HasOne(ba => ba.Author)
+                .WithMany(a => a.BookAuthors)
+                .HasForeignKey(ba => ba.AuthorID);
 
-        modelBuilder.Entity<Document>(entity =>
+            modelBuilder.Entity<Book>()
+                .HasMany(b => b.BookAuthors)
+                .WithOne();
+
+            // Визначення зв'язку між читачем і документом (типом документа)
+            modelBuilder.Entity<Reader>()
+                .HasOne(r => r.Document)
+                .WithMany()
+                .HasForeignKey(r => r.DocumentId);
+
+            // Визначення взаємозв'язку між позиченнями книг і читачами
+            modelBuilder.Entity<BookLoan>()
+                .HasOne(bl => bl.Reader)
+                .WithMany(r => r.BookLoans)
+                .HasForeignKey(bl => bl.ReaderId);
+
+            modelBuilder.Entity<BookLoan>()
+                .HasOne(bl => bl.Book)
+                .WithMany()
+                .HasForeignKey(bl => bl.BookId);
+        }
+
+        // Методи для додавання, оновлення та видалення книг
+        public void AddBook(Book newBook)
         {
-            entity.HasKey(e => e.Id).HasName("PK__Document__3214EC27368151B9");
+            Books.Add(newBook);
+            SaveChanges();
+        }
 
-            entity.ToTable("Document");
-
-            entity.Property(e => e.Id)
-                .ValueGeneratedNever()
-                .HasColumnName("ID");
-            entity.Property(e => e.Title).HasMaxLength(255);
-        });
-
-        modelBuilder.Entity<Librarian>(entity =>
+        public void UpdateBook(Book updatedBook)
         {
-            entity.HasKey(e => e.Id).HasName("PK__Libraria__3214EC27CACA2498");
+            var existingBook = Books.Find(updatedBook.Id);
+            if (existingBook != null)
+            {
+                // Оновлення інформації про книгу
+                existingBook.Title = updatedBook.Title;
+                existingBook.PublisherCode = updatedBook.PublisherCode;
+                SaveChanges();
+            }
+        }
 
-            entity.ToTable("Librarian");
-
-            entity.Property(e => e.Id)
-                .ValueGeneratedNever()
-                .HasColumnName("ID");
-            entity.Property(e => e.Email).HasMaxLength(255);
-            entity.Property(e => e.Login).HasMaxLength(255);
-            entity.Property(e => e.Password).HasMaxLength(255);
-        });
-
-        modelBuilder.Entity<PublishingCode>(entity =>
+        public void RemoveBook(int bookId)
         {
-            entity.HasKey(e => e.Id).HasName("PK__Publishi__3214EC2740A4C538");
+            var bookToRemove = Books.Find(bookId);
+            if (bookToRemove != null)
+            {
+                Books.Remove(bookToRemove);
+                SaveChanges();
+            }
+        }
 
-            entity.ToTable("PublishingCode");
-
-            entity.Property(e => e.Id)
-                .ValueGeneratedNever()
-                .HasColumnName("ID");
-            entity.Property(e => e.Title).HasMaxLength(255);
-        });
-
-        modelBuilder.Entity<Reader>(entity =>
+        // Методи для додавання, оновлення та видалення авторів
+        public void AddAuthor(Author newAuthor)
         {
-            entity.HasKey(e => e.Id).HasName("PK__Reader__3214EC27543D4597");
+            Authors.Add(newAuthor);
+            SaveChanges();
+        }
 
-            entity.ToTable("Reader");
+        public void AddReader(Reader newReader)
+        {
+            Readers.Add(newReader);
+            SaveChanges();
+        }
 
-            entity.Property(e => e.Id)
-                .ValueGeneratedNever()
-                .HasColumnName("ID");
-            entity.Property(e => e.DocumentId).HasColumnName("Document_ID");
-            entity.Property(e => e.DocumentNumber)
-                .HasMaxLength(255)
-                .HasColumnName("Document_number");
-            entity.Property(e => e.Email).HasMaxLength(255);
-            entity.Property(e => e.Forename).HasMaxLength(255);
-            entity.Property(e => e.Login).HasMaxLength(255);
-            entity.Property(e => e.Password).HasMaxLength(255);
-            entity.Property(e => e.Surname).HasMaxLength(255);
+        public void UpdateAuthor(Author updatedAuthor)
+        {
+            var existingAuthor = Authors.Find(updatedAuthor.Id);
+            if (existingAuthor != null)
+            {
+                // Оновлення інформації про автора
+                existingAuthor.Forename = updatedAuthor.Forename;
+                existingAuthor.Surname = updatedAuthor.Surname;
+                SaveChanges();
+            }
+        }
 
-            entity.HasOne(d => d.Document).WithMany(p => p.Readers)
-                .HasForeignKey(d => d.DocumentId)
-                .HasConstraintName("FK__Reader__Document__4222D4EF");
-        });
+        public void UpdateReader(Reader updatedReader)
+        {
+            var existingReader = Readers.Find(updatedReader.Id);
+            if (existingReader != null)
+            {
+                // Оновлення інформації про читача
+                existingReader.Forename = updatedReader.Forename;
+                existingReader.Surname = updatedReader.Surname;
+                SaveChanges();
+            }
+        }
 
-        OnModelCreatingPartial(modelBuilder);
-    }
+        public void RemoveAuthor(int authorId)
+        {
+            var authorToRemove = Authors.Find(authorId);
+            if (authorToRemove != null)
+            {
+                Authors.Remove(authorToRemove);
+                SaveChanges();
+            }
+        }
 
-    partial void OnModelCreatingPartial(ModelBuilder modelBuilder);
-}
+        // Методи для взяття та повернення книги
+        public void BorrowBook(int bookId, int readerId)
+        {
+            var reader = Readers.FirstOrDefault(r => r.Id == readerId);
+            var book = Books.FirstOrDefault(b => b.Id == bookId);
 
-public class LibrarianService
-{
-    private readonly LibraryContext _context;
+            if (reader == null || book == null)
+            {
+                // Обробка помилки: читача або книгу не знайдено
+                return;
+            }
 
-    public LibrarianService()
-    {
-        _context = new LibraryContext();
-    }
+            // Перевірка, чи книга доступна для позичення
+            if (!book.IsAvailable)
+            {
+                // Обробка помилки: книгу вже позичено
+                return;
+            }
 
-    public bool LoginToTheSystem(string login, string password)
-    {
-        // Перевірка наявності бібліотекаря з введеним логіном і паролем у базі даних
-        var librarian = _context.Librarians
-            .FirstOrDefault(b => b.Login == login && b.Password == password);
+            // Встановлюємо дату повернення (наприклад, через 30 днів)
+            DateTime dueDate = DateTime.Now.AddDays(30);
 
-        return librarian != null;
-    }
+            // Створюємо запис про позичену книгу
+            var bookLoan = new BookLoan
+            {
+                ReaderId = readerId,
+                BookId = bookId,
+                DueDate = dueDate
+            };
 
-    public void LibrarianRegistration(Librarian newLibrarian)
-    {
-        // Додавання нового бібліотекаря до бази даних
-        _context.Librarians.Add(newLibrarian);
-        _context.SaveChanges();
+            // Додаємо запис про позичену книгу до бази даних
+            BookLoans.Add(bookLoan);
+
+            // Позначаємо книгу як позичену
+            book.IsAvailable = false;
+
+            // Зберігаємо зміни в базу даних
+            SaveChanges();
+        }
+
+        public bool ReturnBook(int bookLoanId)
+        {
+            // Знайти запис про позичену книгу за її ідентифікатором
+            var bookLoan = BookLoans.FirstOrDefault(loan => loan.Id == bookLoanId);
+
+            if (bookLoan == null)
+            {
+                // Позичення не знайдено, повернути помилку
+                return false;
+            }
+
+            if (bookLoan.DateReturned != null)
+            {
+                // Книга вже була повернута, повернути помилку
+                return false;
+            }
+
+            // Встановити дату повернення книги на поточну дату
+            bookLoan.DateReturned = DateTime.Now;
+
+            // Зберегти зміни у базі даних
+            SaveChanges();
+
+            return true;
+        }
+
+        // Методи для перевірки статусу книги та історії позичень
+        public bool CanBorrowBook(int bookId)
+        {
+            var book = Books.Find(bookId);
+
+            if (book != null)
+            {
+                var isBorrowed = BookLoans.Any(loan => loan.BookId == bookId && loan.DateReturned == null);
+                return !isBorrowed;
+            }
+
+            return false;
+        }
+
+        public List<BookLoan> GetLoanHistory(int readerId)
+        {
+            return BookLoans.Where(loan => loan.ReaderId == readerId).ToList();
+        }
+
+        public List<Book> GetAllBooks()
+        {
+            return Books.ToList();
+        }
+
+        public List<Author> GetAllAuthors()
+        {
+            return Authors.ToList();
+        }
+        public List<Reader> GetAllReaders()
+        {
+            return Readers.ToList();
+        }
+
+        public List<Book> SearchBooksByTitle(string title)
+        {
+            return Books.Where(book => book.Title.Contains(title)).ToList();
+        }
+
+        public List<Book> SearchBooksByAuthor(string authorName)
+        {
+            return Books
+                .Where(book => book.Authors.Any(author => (author.Forename + " " + author.Surname).Contains(authorName)))
+                .ToList();
+        }
+
+        public List<Book> GetAvailableBooks()
+        {
+            return Books.Where(book => book.IsAvailable).ToList();
+        }
+
+        public List<Author> SearchAuthorsByName(string authorName)
+        {
+            return Authors
+                .Where(author => (author.Forename + " " + author.Surname).Contains(authorName))
+                .ToList();
+        }
+
+        public List<BookLoan> GetBorrowedBooks(int readerId)
+        {
+            return BookLoans
+                .Where(loan => loan.ReaderId == readerId && loan.DateReturned == null)
+                .ToList();
+        }
+
+        public List<BookLoan> GetPreviousBorrowedBooks(int readerId)
+        {
+            return BookLoans
+                .Where(loan => loan.ReaderId == readerId && loan.DateReturned != null)
+                .ToList();
+        }
+
+        public List<Reader> GetAllReadersWithHistory()
+        {
+            var readersWithHistory = new List<Reader>();
+
+            var allReaders = Readers.ToList();
+
+            foreach (var reader in allReaders)
+            {
+                reader.BookLoans = BookLoans
+                    .Where(loan => loan.ReaderId == reader.Id && loan.DateReturned == null)
+                    .ToList();
+
+                // Перевірте, чи є боржником
+                reader.IsDebtor = reader.BookLoans.Any(loan => loan.DueDate < DateTime.Now);
+
+                readersWithHistory.Add(reader);
+            }
+
+            return readersWithHistory;
+        }
+
+        public List<BookLoan> GetActiveLoansByReader(int readerId)
+        {
+            return BookLoans
+                .Where(loan => loan.ReaderId == readerId && loan.DateReturned == null)
+                .ToList();
+        }
+
+        public List<BookLoan> GetOverdueLoansByReader(int readerId)
+        {
+            DateTime currentDate = DateTime.Now;
+            return BookLoans
+                .Where(loan => loan.ReaderId == readerId && loan.DateReturned < currentDate)
+                .ToList();
+        }
     }
 }
