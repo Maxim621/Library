@@ -4,7 +4,7 @@ using System.Collections.Generic;
 namespace Library.DAL.Models
 {
 
-    public partial class PublishingCode
+    public class BookCodeType
     {
         public int Id { get; set; }
 

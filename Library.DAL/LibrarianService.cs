@@ -6,6 +6,8 @@ namespace Library.DAL
 {
     public class LibrarianService
     {
+        public DbSet<Author> Authors { get; set; }
+
         private readonly LibraryContext _context;
 
         public LibrarianService(DbContextOptions<LibraryContext> options)
@@ -44,6 +46,34 @@ namespace Library.DAL
             _context.SaveChanges();
 
             Console.WriteLine("Бібліотекар зареєстрований успішно.");
+        }
+
+        public void AddAuthor(Author newAuthor)
+        {
+            Authors.Add(newAuthor);
+            _context.SaveChanges();
+        }
+
+        public void UpdateAuthor(Author updatedAuthor)
+        {
+            var existingAuthor = Authors.Find(updatedAuthor.Id);
+            if (existingAuthor != null)
+            {
+                // Оновлення інформації про автора
+                existingAuthor.Forename = updatedAuthor.Forename;
+                existingAuthor.Surname = updatedAuthor.Surname;
+                _context.SaveChanges();
+            }
+        }
+
+        public void RemoveAuthor(int authorId)
+        {
+            var authorToRemove = Authors.Find(authorId);
+            if (authorToRemove != null)
+            {
+                Authors.Remove(authorToRemove);
+                _context.SaveChanges();
+            }
         }
 
         public List<Book> GetAllBooks()

@@ -4,7 +4,7 @@ using System.Collections.Generic;
 namespace Library.DAL.Models
 {
 
-    public partial class Document
+    public class Document
     {
         public int Id { get; set; }
 

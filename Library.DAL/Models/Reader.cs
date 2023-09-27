@@ -4,16 +4,8 @@ using System.Collections.Generic;
 namespace Library.DAL.Models
 {
 
-    public partial class Reader
+    public class Reader : Librarian
     {
-        public int Id { get; set; }
-
-        public string Login { get; set; } = null!;
-
-        public string Password { get; set; } = null!;
-
-        public string Email { get; set; } = null!;
-
         public string Forename { get; set; } = null!;
 
         public string Surname { get; set; } = null!;

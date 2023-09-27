@@ -4,6 +4,7 @@ using System.IO;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using System;
+using Microsoft.EntityFrameworkCore;
 
 namespace LibraryConsole
 {
@@ -20,9 +21,10 @@ namespace LibraryConsole
             // Налаштування DI контейнера
             var serviceProvider = new ServiceCollection()
                 .AddSingleton(configuration)
+                .AddDbContext<LibraryContext>(options =>
+                    options.UseSqlServer(configuration.GetConnectionString("Server=DESKTOP-M5BKIQ7\\MSSQLSERVER01;Database=master;Trusted_Connection=True;MultipleActiveResultSets=true")))
                 .AddScoped<LibrarianService>()
                 .AddScoped<ReaderService>()
-                .AddScoped<LibraryContext>()
                 .BuildServiceProvider();
 
             // Отримання сервісу та виклик методів
