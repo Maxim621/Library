@@ -48,8 +48,8 @@ namespace Library.DAL
                 Email = email,
                 Forename = forename,
                 Surname = surname,
-                DocumentId = documentId,
-                DocumentNumber = documentNumber
+                Document_ID = documentId,
+                Document_number = documentNumber
             };
 
             // Додавання нового читача до бази даних і збереження змін
@@ -153,6 +153,11 @@ namespace Library.DAL
             }
         }
 
+        public List<Reader> GetAllReaders()
+        {
+            return Readers.ToList();
+        }
+
         public void BorrowBook(int bookId, int readerId)
         {
             var book = _context.Books.FirstOrDefault(b => b.Id == bookId && b.IsAvailable);
@@ -216,6 +221,11 @@ namespace Library.DAL
             }
 
             return readersWithHistory;
+        }
+
+        public List<BookLoan> GetLoanHistory(int readerId)
+        {
+            return BookLoans.Where(loan => loan.ReaderId == readerId).ToList();
         }
     }
 }

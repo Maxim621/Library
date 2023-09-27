@@ -58,26 +58,5 @@ namespace Library.DAL
                 .HasIndex(r => r.Login)
                 .IsUnique();
         }
-
-        public List<BookLoan> GetLoanHistory(int readerId)
-        {
-            return BookLoans.Where(loan => loan.ReaderId == readerId).ToList();
-        }
-
-        public List<Author> GetAllAuthors()
-        {
-            return Authors.ToList();
-        }
-        public List<Reader> GetAllReaders()
-        {
-            return Readers.ToList();
-        }
-
-        public List<Author> SearchAuthorsByName(string authorName)
-        {
-            return Authors
-                .Where(author => (author.Forename + " " + author.Surname).Contains(authorName))
-                .ToList();
-        }
     }
 }

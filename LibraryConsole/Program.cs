@@ -5,6 +5,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using System;
 using Microsoft.EntityFrameworkCore;
+using Library.DAL.Interfaces;
 
 namespace LibraryConsole
 {
@@ -23,8 +24,10 @@ namespace LibraryConsole
                 .AddSingleton(configuration)
                 .AddDbContext<LibraryContext>(options =>
                     options.UseSqlServer(configuration.GetConnectionString("Server=DESKTOP-M5BKIQ7\\MSSQLSERVER01;Database=master;Trusted_Connection=True;MultipleActiveResultSets=true")))
-                .AddScoped<LibrarianService>()
-                .AddScoped<ReaderService>()
+                .AddScoped<IAuthService, AuthService>()
+                .AddScoped<IBookService, BookService>()
+                .AddScoped<ILibrarianService, LibrarianService>()
+                .AddScoped<IReaderService, ReaderService>()
                 .BuildServiceProvider();
 
             // Отримання сервісу та виклик методів
@@ -292,6 +295,7 @@ namespace LibraryConsole
                     }
                 }
             }
+            serviceProvider.Dispose();
         }
     }
 }

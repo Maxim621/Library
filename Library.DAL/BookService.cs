@@ -3,9 +3,9 @@ using Library.DAL.Models;
 using Microsoft.EntityFrameworkCore;
 using static System.Reflection.Metadata.BlobBuilder;
 
-namespace Library.DAL.Repository
+namespace Library.DAL
 {
-    public class BookRepository : IBookRepository
+    public class BookService : IBookService
     {
         public DbSet<Book> Books { get; set; }
 
@@ -15,7 +15,7 @@ namespace Library.DAL.Repository
 
         private readonly LibraryContext _context;
 
-        public BookRepository(LibraryContext context)
+        public BookService(LibraryContext context)
         {
             _context = context;
         }
@@ -64,13 +64,6 @@ namespace Library.DAL.Repository
         {
             return BookLoans
                 .Where(loan => loan.ReaderId == readerId && loan.DateReturned == null)
-                .ToList();
-        }
-
-        public List<BookLoan> GetPreviousBorrowedBooks(int readerId)
-        {
-            return BookLoans
-                .Where(loan => loan.ReaderId == readerId && loan.DateReturned != null)
                 .ToList();
         }
 
