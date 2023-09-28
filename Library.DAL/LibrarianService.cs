@@ -1,11 +1,14 @@
-﻿using Library.DAL.Models;
+﻿using Library.DAL.Interfaces;
+using Library.DAL.Models;
 using Microsoft.EntityFrameworkCore;
 using System;
 
 namespace Library.DAL
 {
-    public class LibrarianService
+    public class LibrarianService : ILibrarianService
     {
+        public DbSet<Author> Authors { get; set; }
+
         private readonly LibraryContext _context;
 
         public LibrarianService(DbContextOptions<LibraryContext> options)
@@ -22,6 +25,11 @@ namespace Library.DAL
             return librarian != null;
         }
 
+        public void AddAuthor(Author newAuthor)
+        {
+            Authors.Add(newAuthor);
+            _context.SaveChanges();
+        }
         public void RegisterLibrarian(string login, string password, string email)
         {
             // Перевірка, чи бібліотекар з таким логіном не існує вже в базі даних
@@ -45,6 +53,34 @@ namespace Library.DAL
 
             Console.WriteLine("Бібліотекар зареєстрований успішно.");
         }
+        public void UpdateAuthor(Author updatedAuthor)
+        {
+            var existingAuthor = Authors.Find(updatedAuthor.Id);
+            if (existingAuthor != null)
+            {
+                // Оновлення інформації про автора
+                existingAuthor.Forename = updatedAuthor.Forename;
+                existingAuthor.Surname = updatedAuthor.Surname;
+                _context.SaveChanges();
+            }
+        }
+
+
+
+        public List<Author> GetAllAuthors()
+        {
+            return Authors.ToList();
+        }
+
+        public void RemoveAuthor(int authorId)
+        {
+            var authorToRemove = Authors.Find(authorId);
+            if (authorToRemove != null)
+            {
+                Authors.Remove(authorToRemove);
+                _context.SaveChanges();
+            }
+        }
 
         public List<Book> GetAllBooks()
         {
@@ -52,10 +88,11 @@ namespace Library.DAL
             return _context.Books.ToList();
         }
 
-        public List<Author> GetAllAuthors()
+        public List<Author> SearchAuthorsByName(string authorName)
         {
-            // Повернути список усіх авторів
-            return _context.Authors.ToList();
+            return Authors
+                .Where(author => (author.Forename + " " + author.Surname).Contains(authorName))
+                .ToList();
         }
 
         public void AddOrUpdateBook(Book book)
@@ -96,6 +133,11 @@ namespace Library.DAL
                 _context.SaveChanges();
             }
         }
+        public List<Reader> GetAllReaders()
+        {
+            // Повернути список усіх читачів
+            return _context.Readers.ToList();
+        }
 
         public List<Reader> GetDebtors()
         {
@@ -104,12 +146,6 @@ namespace Library.DAL
             return _context.Readers
                 .Where(r => r.BookLoans.Any(bl => bl.DateReturned < currentDate))
                 .ToList();
-        }
-
-        public List<Reader> GetAllReaders()
-        {
-            // Повернути список усіх читачів
-            return _context.Readers.ToList();
         }
 
         public List<BookLoan> GetBorrowHistory(int readerId)

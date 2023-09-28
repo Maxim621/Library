@@ -1,9 +1,10 @@
 ﻿using System;
+using Library.DAL.Interfaces;
 using Library.DAL.Models;
 
 namespace Library.DAL
 {
-    public class AuthService
+    public class AuthService : IAuthService
     {
         private readonly LibrarianService _librarianService;
         private readonly ReaderService _readerService;
@@ -31,6 +32,16 @@ namespace Library.DAL
 
             // В інших випадках видаємо помилку автентифікації
             return false;
+        }
+
+        public void RegisterLibrarian(string login, string password, string email)
+        {
+            _librarianService.RegisterLibrarian(login, password, email);
+        }
+
+        public void RegisterReader(string login, string password, string email, string forename, string surname, int documentId, string documentNumber)
+        {
+            _readerService.RegisterReader(login, password, email, forename, surname, documentId, documentNumber);
         }
     }
 }

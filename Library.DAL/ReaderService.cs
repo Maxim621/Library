@@ -1,11 +1,16 @@
-﻿using Library.DAL.Models;
+﻿using Library.DAL.Interfaces;
+using Library.DAL.Models;
 using Microsoft.EntityFrameworkCore;
 using System;
 
 namespace Library.DAL
 {
-    public class ReaderService
+    public class ReaderService : IReaderService
     {
+        public DbSet<Reader> Readers { get; set; }
+
+        public DbSet<BookLoan> BookLoans { get; set; }
+
         private readonly LibraryContext _context;
 
         public ReaderService()
@@ -130,6 +135,29 @@ namespace Library.DAL
             }
         }
 
+        public void AddReader(Reader newReader)
+        {
+            Readers.Add(newReader);
+            _context.SaveChanges();
+        }
+
+        public void UpdateReader(Reader updatedReader)
+        {
+            var existingReader = Readers.Find(updatedReader.Id);
+            if (existingReader != null)
+            {
+                // Оновлення інформації про читача
+                existingReader.Forename = updatedReader.Forename;
+                existingReader.Surname = updatedReader.Surname;
+                _context.SaveChanges();
+            }
+        }
+
+        public List<Reader> GetAllReaders()
+        {
+            return Readers.ToList();
+        }
+
         public void BorrowBook(int bookId, int readerId)
         {
             var book = _context.Books.FirstOrDefault(b => b.Id == bookId && b.IsAvailable);
@@ -157,6 +185,47 @@ namespace Library.DAL
             {
                 Console.WriteLine("Книгу неможливо позичити, оскільки вона вже взята або не існує.");
             }
+        }
+
+        public List<BookLoan> GetActiveLoansByReader(int readerId)
+        {
+            return BookLoans
+                .Where(loan => loan.ReaderId == readerId && loan.DateReturned == null)
+                .ToList();
+        }
+
+        public List<BookLoan> GetOverdueLoansByReader(int readerId)
+        {
+            DateTime currentDate = DateTime.Now;
+            return BookLoans
+                .Where(loan => loan.ReaderId == readerId && loan.DateReturned < currentDate)
+                .ToList();
+        }
+
+        public List<Reader> GetAllReadersWithHistory()
+        {
+            var readersWithHistory = new List<Reader>();
+
+            var allReaders = Readers.ToList();
+
+            foreach (var reader in allReaders)
+            {
+                reader.BookLoans = BookLoans
+                    .Where(loan => loan.ReaderId == reader.Id && loan.DateReturned == null)
+                    .ToList();
+
+                // Перевірте, чи є боржником
+                reader.IsDebtor = reader.BookLoans.Any(loan => loan.DueDate < DateTime.Now);
+
+                readersWithHistory.Add(reader);
+            }
+
+            return readersWithHistory;
+        }
+
+        public List<BookLoan> GetLoanHistory(int readerId)
+        {
+            return BookLoans.Where(loan => loan.ReaderId == readerId).ToList();
         }
     }
 }
