@@ -1,8 +1,8 @@
-﻿using Library.DAL.Models;
-using System;
+﻿using System;
+using Library.DAL.Models;
 using System.Collections.Generic;
 
-namespace Library.DAL.Interfaces
+namespace Library.Interfaces
 {
     public interface IReaderService
     {

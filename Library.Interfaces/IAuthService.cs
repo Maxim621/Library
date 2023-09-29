@@ -1,9 +1,7 @@
-﻿using Library.DAL.Models;
-using Microsoft.EntityFrameworkCore;
-using System;
+﻿using System;
 using System.Collections.Generic;
 
-namespace Library.DAL.Interfaces
+namespace Library.Interfaces
 {
     public interface IAuthService
     {

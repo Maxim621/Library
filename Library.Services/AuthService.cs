@@ -1,8 +1,8 @@
 ﻿using System;
-using Library.DAL.Interfaces;
 using Library.DAL.Models;
+using Library.Interfaces;
 
-namespace Library.DAL
+namespace Library.Services
 {
     public class AuthService : IAuthService
     {

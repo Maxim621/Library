@@ -1,19 +1,21 @@
-﻿using Library.DAL.Interfaces;
+﻿using Library.Interfaces;
 using Library.DAL.Models;
+using Library.DAL;
 using Microsoft.EntityFrameworkCore;
 using System;
 
-namespace Library.DAL
+namespace Library.Services
 {
     public class LibrarianService : ILibrarianService
     {
-        public DbSet<Author> Authors { get; set; }
+        private readonly List<Author> _authors;
 
         private readonly LibraryContext _context;
 
         public LibrarianService(DbContextOptions<LibraryContext> options)
         {
             _context = new LibraryContext(options);
+            _authors = _context.Authors.ToList();
         }
 
         public bool Login(string login, string password)
@@ -27,7 +29,7 @@ namespace Library.DAL
 
         public void AddAuthor(Author newAuthor)
         {
-            Authors.Add(newAuthor);
+            _authors.Add(newAuthor);
             _context.SaveChanges();
         }
         public void RegisterLibrarian(string login, string password, string email)
@@ -53,32 +55,31 @@ namespace Library.DAL
 
             Console.WriteLine("Бібліотекар зареєстрований успішно.");
         }
-        public void UpdateAuthor(Author updatedAuthor)
+        public void UpdateAuthor(int authorId, Author updatedAuthor)
         {
-            var existingAuthor = Authors.Find(updatedAuthor.Id);
+            var existingAuthor = _authors.FirstOrDefault(author => author.Id == authorId);
             if (existingAuthor != null)
             {
-                // Оновлення інформації про автора
+                // Оновлення інформації про автора на основі updatedAuthor
                 existingAuthor.Forename = updatedAuthor.Forename;
                 existingAuthor.Surname = updatedAuthor.Surname;
+                // Інші оновлення полів
                 _context.SaveChanges();
             }
         }
 
-
-
         public List<Author> GetAllAuthors()
         {
-            return Authors.ToList();
+            return _authors.ToList();
         }
 
         public void RemoveAuthor(int authorId)
         {
-            var authorToRemove = Authors.Find(authorId);
+            var authorToRemove = _authors.FirstOrDefault(author => author.Id == authorId);
             if (authorToRemove != null)
             {
-                Authors.Remove(authorToRemove);
-                _context.SaveChanges();
+                _authors.Remove(authorToRemove);
+                _context.SaveChanges(); // Зберегти зміни у базі даних, якщо потрібно
             }
         }
 
@@ -90,7 +91,7 @@ namespace Library.DAL
 
         public List<Author> SearchAuthorsByName(string authorName)
         {
-            return Authors
+            return _authors
                 .Where(author => (author.Forename + " " + author.Surname).Contains(authorName))
                 .ToList();
         }

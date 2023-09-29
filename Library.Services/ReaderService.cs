@@ -1,17 +1,16 @@
-﻿using Library.DAL.Interfaces;
+﻿using Microsoft.EntityFrameworkCore;
 using Library.DAL.Models;
-using Microsoft.EntityFrameworkCore;
+using Library.Interfaces;
+using Library.DAL;
 using System;
 
-namespace Library.DAL
+namespace Library.Services
 {
     public class ReaderService : IReaderService
     {
-        public DbSet<Reader> Readers { get; set; }
-
-        public DbSet<BookLoan> BookLoans { get; set; }
-
         private readonly LibraryContext _context;
+        private readonly List<Reader> _readers;
+        private readonly List<BookLoan> _bookLoans;
 
         public ReaderService()
         {
@@ -20,6 +19,8 @@ namespace Library.DAL
             .Options;
 
             _context = new LibraryContext(options);
+            _readers = new List<Reader>();
+            _bookLoans = new List<BookLoan>();
         }
 
         public bool Login(string login, string password)
@@ -137,25 +138,23 @@ namespace Library.DAL
 
         public void AddReader(Reader newReader)
         {
-            Readers.Add(newReader);
+            _readers.Add(newReader);
             _context.SaveChanges();
         }
 
         public void UpdateReader(Reader updatedReader)
         {
-            var existingReader = Readers.Find(updatedReader.Id);
+            var existingReader = _readers.FirstOrDefault(r => r.Id == updatedReader.Id);
             if (existingReader != null)
             {
-                // Оновлення інформації про читача
                 existingReader.Forename = updatedReader.Forename;
                 existingReader.Surname = updatedReader.Surname;
-                _context.SaveChanges();
             }
         }
 
         public List<Reader> GetAllReaders()
         {
-            return Readers.ToList();
+            return _readers.ToList();
         }
 
         public void BorrowBook(int bookId, int readerId)
@@ -189,7 +188,7 @@ namespace Library.DAL
 
         public List<BookLoan> GetActiveLoansByReader(int readerId)
         {
-            return BookLoans
+            return _bookLoans
                 .Where(loan => loan.ReaderId == readerId && loan.DateReturned == null)
                 .ToList();
         }
@@ -197,7 +196,7 @@ namespace Library.DAL
         public List<BookLoan> GetOverdueLoansByReader(int readerId)
         {
             DateTime currentDate = DateTime.Now;
-            return BookLoans
+            return _bookLoans
                 .Where(loan => loan.ReaderId == readerId && loan.DateReturned < currentDate)
                 .ToList();
         }
@@ -206,11 +205,11 @@ namespace Library.DAL
         {
             var readersWithHistory = new List<Reader>();
 
-            var allReaders = Readers.ToList();
+            var allReaders = _readers.ToList();
 
             foreach (var reader in allReaders)
             {
-                reader.BookLoans = BookLoans
+                reader.BookLoans = _bookLoans
                     .Where(loan => loan.ReaderId == reader.Id && loan.DateReturned == null)
                     .ToList();
 
@@ -225,7 +224,7 @@ namespace Library.DAL
 
         public List<BookLoan> GetLoanHistory(int readerId)
         {
-            return BookLoans.Where(loan => loan.ReaderId == readerId).ToList();
+            return _bookLoans.Where(loan => loan.ReaderId == readerId).ToList();
         }
     }
 }
