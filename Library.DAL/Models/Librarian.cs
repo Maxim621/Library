@@ -4,7 +4,7 @@ using System.Collections.Generic;
 namespace Library.DAL.Models
 {
 
-    public partial class Librarian
+    public class Librarian
     {
         public int Id { get; set; }
 
@@ -13,5 +13,10 @@ namespace Library.DAL.Models
         public string Password { get; set; } = null!;
 
         public string Email { get; set; } = null!;
+
+        public bool Authenticate(string password)
+        {
+            return Password == password;
+        }
     }
 }

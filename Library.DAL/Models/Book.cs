@@ -4,7 +4,7 @@ using System.Collections.Generic;
 namespace Library.DAL.Models
 {
 
-    public partial class Book
+    public class Book
     {
         public int Id { get; set; }
 
@@ -20,15 +20,13 @@ namespace Library.DAL.Models
 
         public string? CityOfPublishing { get; set; }
 
-        public virtual PublishingCode? PublishingCode { get; set; }
+        public virtual BookCodeType? PublishingCode { get; set; }
 
         public List<Author> Authors { get; set; }
 
         public bool IsAvailable { get; set; }
 
-        public List<BookAuthor> BookAuthors { get; set; }
-
         public int PublicationYear { get; set; }
-
+        public string Author { get; set; }
     }
 }

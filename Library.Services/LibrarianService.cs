@@ -1,16 +1,21 @@
-﻿using Library.DAL.Models;
+﻿using Library.Interfaces;
+using Library.DAL.Models;
+using Library.DAL;
 using Microsoft.EntityFrameworkCore;
 using System;
 
-namespace Library.DAL
+namespace Library.Services
 {
-    public class LibrarianService
+    public class LibrarianService : ILibrarianService
     {
+        private readonly List<Author> _authors;
+
         private readonly LibraryContext _context;
 
         public LibrarianService(DbContextOptions<LibraryContext> options)
         {
             _context = new LibraryContext(options);
+            _authors = _context.Authors.ToList();
         }
 
         public bool Login(string login, string password)
@@ -22,6 +27,11 @@ namespace Library.DAL
             return librarian != null;
         }
 
+        public void AddAuthor(Author newAuthor)
+        {
+            _authors.Add(newAuthor);
+            _context.SaveChanges();
+        }
         public void RegisterLibrarian(string login, string password, string email)
         {
             // Перевірка, чи бібліотекар з таким логіном не існує вже в базі даних
@@ -45,6 +55,33 @@ namespace Library.DAL
 
             Console.WriteLine("Бібліотекар зареєстрований успішно.");
         }
+        public void UpdateAuthor(int authorId, Author updatedAuthor)
+        {
+            var existingAuthor = _authors.FirstOrDefault(author => author.Id == authorId);
+            if (existingAuthor != null)
+            {
+                // Оновлення інформації про автора на основі updatedAuthor
+                existingAuthor.Forename = updatedAuthor.Forename;
+                existingAuthor.Surname = updatedAuthor.Surname;
+                // Інші оновлення полів
+                _context.SaveChanges();
+            }
+        }
+
+        public List<Author> GetAllAuthors()
+        {
+            return _authors.ToList();
+        }
+
+        public void RemoveAuthor(int authorId)
+        {
+            var authorToRemove = _authors.FirstOrDefault(author => author.Id == authorId);
+            if (authorToRemove != null)
+            {
+                _authors.Remove(authorToRemove);
+                _context.SaveChanges(); // Зберегти зміни у базі даних, якщо потрібно
+            }
+        }
 
         public List<Book> GetAllBooks()
         {
@@ -52,10 +89,11 @@ namespace Library.DAL
             return _context.Books.ToList();
         }
 
-        public List<Author> GetAllAuthors()
+        public List<Author> SearchAuthorsByName(string authorName)
         {
-            // Повернути список усіх авторів
-            return _context.Authors.ToList();
+            return _authors
+                .Where(author => (author.Forename + " " + author.Surname).Contains(authorName))
+                .ToList();
         }
 
         public void AddOrUpdateBook(Book book)
@@ -96,6 +134,11 @@ namespace Library.DAL
                 _context.SaveChanges();
             }
         }
+        public List<Reader> GetAllReaders()
+        {
+            // Повернути список усіх читачів
+            return _context.Readers.ToList();
+        }
 
         public List<Reader> GetDebtors()
         {
@@ -104,12 +147,6 @@ namespace Library.DAL
             return _context.Readers
                 .Where(r => r.BookLoans.Any(bl => bl.DateReturned < currentDate))
                 .ToList();
-        }
-
-        public List<Reader> GetAllReaders()
-        {
-            // Повернути список усіх читачів
-            return _context.Readers.ToList();
         }
 
         public List<BookLoan> GetBorrowHistory(int readerId)
