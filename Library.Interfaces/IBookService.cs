@@ -12,7 +12,7 @@ namespace Library.Interfaces
         List<Book> SearchBooksByAuthor(string authorName);
         List<Book> GetAvailableBooks();
         void AddBook(Book newBook);
-        void UpdateBook(Book updatedBook);
+        void UpdateBook(int bookId, Book updatedBook);
         void RemoveBook(int bookId);
     }
 }

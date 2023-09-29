@@ -10,6 +10,7 @@ namespace Library.Interfaces
         List<Book> GetAllBooks();
         void DeleteReader(int readerId);
         List<Reader> GetDebtors();
+        List<Author> GetAllAuthors();
         List<Reader> GetAllReaders();
         List<BookLoan> GetBorrowHistory(int readerId);
         void AddOrUpdateBook(Book book);

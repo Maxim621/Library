@@ -50,14 +50,15 @@ namespace Library.Services
             _books.Add(newBook);
         }
 
-        public void UpdateBook(Book updatedBook)
+        public void UpdateBook(int bookId, Book updatedBook)
         {
-            var existingBook = _books.FirstOrDefault(b => b.Id == updatedBook.Id);
+            var existingBook = _books.FirstOrDefault(b => b.Id == bookId);
             if (existingBook != null)
             {
-                // Оновлення книги в колекції
-                _books.Remove(existingBook);
-                _books.Add(updatedBook);
+                // Оновлюємо властності існуючої книги на основі updatedBook
+                existingBook.Title = updatedBook.Title;
+                existingBook.Author = updatedBook.Author;
+                // Інші оновлення властностей
             }
         }
 

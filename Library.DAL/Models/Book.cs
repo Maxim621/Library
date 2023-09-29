@@ -27,6 +27,6 @@ namespace Library.DAL.Models
         public bool IsAvailable { get; set; }
 
         public int PublicationYear { get; set; }
-
+        public string Author { get; set; }
     }
 }

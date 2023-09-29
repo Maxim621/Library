@@ -23,5 +23,6 @@ namespace Library.Interfaces
         List<BookLoan> GetActiveLoansByReader(int readerId);
         List<BookLoan> GetOverdueLoansByReader(int readerId);
         List<Reader> GetAllReadersWithHistory();
+        void RegisterReader(string login, string password, string email, string forename, string surname, int documentId, string documentNumber);
     }
 }
